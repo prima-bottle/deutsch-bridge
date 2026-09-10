@@ -1434,7 +1434,7 @@ function playWord(word) {
 //  CLAUDE API
 // ══════════════════════════════════════════════
 async function callClaude(prompt, maxTokens = 1500) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://small-voice-7e11.richardwongprim.workers.dev', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
