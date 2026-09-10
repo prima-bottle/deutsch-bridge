@@ -561,10 +561,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--white);fo
           <div class="res-label" id="lbl-natural">地道表达指南</div>
           <div class="express-why" id="res-natural"></div>
         </div>
-        <!-- Examples -->
-        <div class="res-section">
-          <div class="res-label" id="lbl-examples">例句</div>
-          <div id="res-examples"></div>
+        <!-- Examples (lazy) -->
+        <div class="res-section" id="section-examples" style="cursor:pointer" onclick="expandSection('examples')">
+          <div class="res-label" id="lbl-examples" style="display:flex;align-items:center;justify-content:space-between">
+            <span>例句</span><span id="examples-toggle" style="font-size:12px;color:var(--amber)">▶ 展开</span>
+          </div>
+          <div id="res-examples" style="display:none"></div>
         </div>
         <!-- Phrases -->
         <div class="res-section">
@@ -582,11 +584,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--white);fo
             </div>
           </div>
         </div>
-        <!-- Grammar -->
-        <div class="res-section">
-          <div class="res-label" id="lbl-grammar">语法</div>
-          <div class="register-panel" id="res-grammar"></div>
-          <div class="express-why" id="res-grammar-note" style="margin-top:12px"></div>
+        <!-- Grammar (lazy) -->
+        <div class="res-section" id="section-grammar" style="cursor:pointer" onclick="expandSection('grammar')">
+          <div class="res-label" id="lbl-grammar" style="display:flex;align-items:center;justify-content:space-between">
+            <span>语法</span><span id="grammar-toggle" style="font-size:12px;color:var(--amber)">▶ 展开</span>
+          </div>
+          <div id="res-grammar" style="display:none"></div>
+          <div class="express-why" id="res-grammar-note" style="margin-top:12px;display:none"></div>
+        </div>
+        <!-- Cross-lang (lazy) -->
+        <div class="res-section" id="section-cross-lang" style="cursor:pointer" onclick="expandSection('cross-lang')">
+          <div class="res-label" style="display:flex;align-items:center;justify-content:space-between">
+            <span id="lbl-cross-lang">跨语言翻译</span><span id="cross-lang-toggle" style="font-size:12px;color:var(--amber)">▶ 展开</span>
+          </div>
+          <div id="res-cross-lang" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -708,6 +719,23 @@ let studyIndex = 0;
 let studyMode = 'flash';
 let cardFlipped = false;
 let expressResult = null;
+
+// Cache: key = "word|dirFrom|dirTo", value = {core, examples, grammar, phrases, crossLang}
+const CACHE_KEY = 'db-search-cache';
+function getCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch(e) { return {}; } }
+function setCache(key, section, data) {
+  const c = getCache();
+  if (!c[key]) c[key] = {};
+  c[key][section] = data;
+  // Keep max 100 entries
+  const keys = Object.keys(c);
+  if (keys.length > 100) delete c[keys[0]];
+  localStorage.setItem(CACHE_KEY, JSON.stringify(c));
+}
+function getCacheSection(key, section) {
+  const c = getCache();
+  return c[key]?.[section] || null;
+}
 
 // Per-user vocab: { word, translation, phonetic, added, interval, due, ease, notes }
 function getVocab() {
@@ -913,15 +941,26 @@ async function doSearch() {
   if (!query) return;
   if (!apiKey) { showScreen('screen-api'); return; }
 
+  const cacheKey = `${query.toLowerCase()}|${dirFrom}|${dirTo}`;
   setLoading(true);
   hideEl('result-wrap');
   hideError('search-error');
 
-  const prompt = buildSearchPrompt(query);
   try {
-    const data = await callClaude(prompt, 2000);
-    currentResult = data;
-    renderSearchResult(data);
+    let core = getCacheSection(cacheKey, 'core');
+    if (!core) {
+      const targetLang = dirTo === 'ZH' ? 'Chinese (Simplified)' : dirTo === 'UK' ? 'Ukrainian' : 'German';
+      const sourceLang = dirFrom === 'DE' ? 'German' : dirFrom === 'ZH' ? 'Chinese' : 'Ukrainian';
+      const user = currentUser === 'daria' ? 'Ukrainian speaker' : 'Chinese speaker';
+      const prompt = `German dictionary for a ${user}. Input: "${query}" (${sourceLang}→${targetLang})
+Return ONLY valid JSON:
+{"deWord":"German word","targetTranslation":"in ${targetLang}","phonetic":"IPA","wordType":"part of speech","register":"colloquial/neutral/formal","frequency":"very common/common/uncommon/rare","formality":"casual/neutral/formal","otherMeanings":["alt 1","alt 2"],"naturalUsageGuide":"3-4 sentences in ${targetLang}: when to use, common mistakes, spoken vs written, native speaker tips","phrases":[{"de":"phrase","target":"meaning in ${targetLang}"},{"de":"...","target":"..."},{"de":"...","target":"..."},{"de":"...","target":"..."},{"de":"...","target":"..."}]}`;
+      core = await callClaude(prompt, 800);
+      setCache(cacheKey, 'core', core);
+    }
+    currentResult = core;
+    currentResult._cacheKey = cacheKey;
+    renderCoreResult(core);
     showEl('result-wrap');
   } catch(e) {
     showError('search-error', e.message);
@@ -930,114 +969,171 @@ async function doSearch() {
   }
 }
 
-function buildSearchPrompt(query) {
-  const user = currentUser === 'daria' ? 'Ukrainian speaker learning German' : 'Chinese speaker learning German';
-  const targetLang = dirTo === 'ZH' ? 'Chinese (Simplified)' : dirTo === 'UK' ? 'Ukrainian' : 'German';
-  const sourceLang = dirFrom === 'DE' ? 'German' : dirFrom === 'ZH' ? 'Chinese' : 'Ukrainian';
+const expandedSections = new Set();
 
-  return `You are an expert German dictionary for a ${user}. Input: "${query}" (${sourceLang} → ${targetLang})
-
-Return ONLY valid JSON (no markdown):
-{
-  "deWord": "the German word/phrase",
-  "targetTranslation": "translation in ${targetLang}",
-  "phonetic": "IPA e.g. [ˈbaɪʃpiːl]",
-  "wordType": "e.g. das Substantiv (n.) / Verb / Adjektiv",
-  "register": "colloquial/neutral/formal/literary/vulgar",
-  "frequency": "very common/common/uncommon/rare",
-  "formality": "casual/neutral/formal",
-  "otherMeanings": ["alt meaning 1 in ${targetLang}", "alt meaning 2"],
-  "naturalUsageGuide": "Detailed guide (3-5 sentences in ${targetLang}): when to use this word, common mistakes learners make, how native speakers actually use it, any regional or contextual nuance, is it more spoken or written",
-  "grammar": [
-    {"key": "Genus", "val": "der/die/das or N/A"},
-    {"key": "Plural", "val": "plural form or N/A"},
-    {"key": "Konjugation", "val": "ich/du/er form or N/A"},
-    {"key": "Rektion", "val": "which case it takes"}
-  ],
-  "grammarNote": "Key grammar point in ${targetLang}",
-  "examples": [
-    {"de": "German example sentence", "target": "${targetLang} translation", "context": "casual/formal/written"},
-    {"de": "...", "target": "...", "context": "..."},
-    {"de": "...", "target": "...", "context": "..."}
-  ],
-  "phrases": [
-    {"de": "phrase or Redewendung", "target": "meaning in ${targetLang}"},
-    {"de": "...", "target": "..."},
-    {"de": "...", "target": "..."},
-    {"de": "...", "target": "..."},
-    {"de": "...", "target": "..."}
-  ]
-}`;
+function expandSection(name) {
+  if (expandedSections.has(name)) return; // already expanded
+  expandedSections.add(name);
+  const toggle = document.getElementById(`${name}-toggle`);
+  if (toggle) toggle.textContent = '▼ 收起';
+  // Show content div
+  const contentId = name === 'cross-lang' ? 'res-cross-lang' : `res-${name}`;
+  const el = document.getElementById(contentId);
+  if (el) el.style.display = 'block';
+  if (name === 'grammar') {
+    document.getElementById('res-grammar-note').style.display = 'block';
+  }
+  // Stop propagation on section click after expand
+  const section = document.getElementById(`section-${name}`);
+  if (section) section.onclick = null;
+  // Load data
+  if (name === 'examples') loadExamples();
+  else if (name === 'grammar') loadGrammar();
+  else if (name === 'cross-lang') loadCrossLang();
 }
 
-function renderSearchResult(d) {
+function resetExpandedSections() {
+  expandedSections.clear();
+  ['examples','grammar','cross-lang'].forEach(name => {
+    const toggle = document.getElementById(`${name}-toggle`);
+    if (toggle) toggle.textContent = '▶ 展开';
+    const contentId = name === 'cross-lang' ? 'res-cross-lang' : `res-${name}`;
+    const el = document.getElementById(contentId);
+    if (el) el.style.display = 'none';
+    if (name === 'grammar') document.getElementById('res-grammar-note').style.display = 'none';
+    const section = document.getElementById(`section-${name}`);
+    if (section) section.onclick = () => expandSection(name);
+  });
+}
+
+function renderCoreResult(d) {
+  resetExpandedSections();
   document.getElementById('res-word').textContent = d.deWord || '';
   document.getElementById('res-phonetic').textContent = d.phonetic || '';
 
-  // Badges
   const badges = document.getElementById('res-badges');
   badges.innerHTML = '';
   if (d.wordType) badges.innerHTML += `<span class="badge badge-type">${d.wordType}</span>`;
-  if (d.register) {
-    const isColloquial = /colloquial|umgangs|slang/i.test(d.register);
-    const isFormal = /formal|schriftlich/i.test(d.register);
-    badges.innerHTML += `<span class="badge badge-register">${d.register}</span>`;
-  }
+  if (d.register) badges.innerHTML += `<span class="badge badge-register">${d.register}</span>`;
   if (d.formality) badges.innerHTML += `<span class="badge badge-formal">${d.formality}</span>`;
   if (d.frequency) badges.innerHTML += `<span class="badge badge-type">${d.frequency}</span>`;
 
-  // Translation
   document.getElementById('res-translation').textContent = d.targetTranslation || '';
   document.getElementById('res-other').textContent = (d.otherMeanings || []).join(' · ');
 
-  // Register panel
   const reg = document.getElementById('res-register');
   reg.innerHTML = [
     {k:'语体', v: d.register || '—'},
     {k:'正式度', v: d.formality || '—'},
     {k:'使用频率', v: d.frequency || '—'}
-  ].map(r => `
-    <div class="register-row">
-      <span class="reg-key">${r.k}</span>
-      <span class="reg-val">${r.v}</span>
-    </div>`).join('');
+  ].map(r => `<div class="register-row"><span class="reg-key">${r.k}</span><span class="reg-val">${r.v}</span></div>`).join('');
 
-  // Natural usage
   document.getElementById('res-natural').textContent = d.naturalUsageGuide || '';
 
-  // Examples
-  const exDiv = document.getElementById('res-examples');
-  exDiv.innerHTML = (d.examples || []).map(ex => `
+  // Phrases (included in core)
+  const phDiv = document.getElementById('res-phrases');
+  phDiv.innerHTML = (d.phrases || []).map(p => `
+    <div class="phrase-item"><div class="ph-de">${p.de}</div><div class="ph-zh">${p.target}</div></div>`).join('');
+
+  // Update cross-lang label based on direction
+  const crossLabel = (dirTo === 'ZH' || dirFrom === 'ZH') ? '🇺🇦 乌克兰语翻译' : '🇨🇳 中文翻译';
+  const crossLblEl = document.getElementById('lbl-cross-lang');
+  if (crossLblEl) crossLblEl.textContent = crossLabel;
+
+  // Audio
+  const w = d.deWord || '';
+  document.getElementById('play-word-name').textContent = w;
+  document.getElementById('forvo-link').href = `https://forvo.com/word/${encodeURIComponent(w)}/#de`;
+  document.getElementById('play-btn').onclick = () => playWord(w);
+
+  updateSaveBtn(d.deWord);
+}
+
+// Lazy load: Examples
+async function loadExamples() {
+  if (!currentResult) return;
+  const cacheKey = currentResult._cacheKey;
+  const cached = getCacheSection(cacheKey, 'examples');
+  const div = document.getElementById('res-examples');
+  if (cached) { renderExamples(cached); return; }
+  div.innerHTML = '<div style="color:var(--white-30);font-size:13px">加载中...</div>';
+  const targetLang = dirTo === 'ZH' ? 'Chinese (Simplified)' : dirTo === 'UK' ? 'Ukrainian' : 'German';
+  const prompt = `Give 3 natural German example sentences for "${currentResult.deWord}", with ${targetLang} translations.
+Return ONLY valid JSON: {"examples":[{"de":"sentence","target":"translation","context":"casual/formal/written"},{"de":"...","target":"...","context":"..."},{"de":"...","target":"...","context":"..."}]}`;
+  try {
+    const data = await callClaude(prompt, 400);
+    setCache(cacheKey, 'examples', data.examples || []);
+    renderExamples(data.examples || []);
+  } catch(e) { div.innerHTML = `<div style="color:var(--red);font-size:13px">${e.message}</div>`; }
+}
+
+function renderExamples(examples) {
+  document.getElementById('res-examples').innerHTML = examples.map(ex => `
     <div class="example-item">
       <div class="ex-de">${ex.de} <span style="font-size:11px;color:var(--amber);margin-left:6px">${ex.context||''}</span></div>
       <div class="ex-zh">${ex.target}</div>
     </div>`).join('');
+}
 
-  // Phrases
-  const phDiv = document.getElementById('res-phrases');
-  phDiv.innerHTML = (d.phrases || []).map(p => `
-    <div class="phrase-item">
-      <div class="ph-de">${p.de}</div>
-      <div class="ph-zh">${p.target}</div>
-    </div>`).join('');
+// Lazy load: Grammar
+async function loadGrammar() {
+  if (!currentResult) return;
+  const cacheKey = currentResult._cacheKey;
+  const cached = getCacheSection(cacheKey, 'grammar');
+  const div = document.getElementById('res-grammar');
+  if (cached) { renderGrammar(cached); return; }
+  div.innerHTML = '<div style="color:var(--white-30);font-size:13px">加载中...</div>';
+  const targetLang = dirTo === 'ZH' ? 'Chinese (Simplified)' : dirTo === 'UK' ? 'Ukrainian' : 'German';
+  const prompt = `Grammar info for German word "${currentResult.deWord}". Explain in ${targetLang}.
+Return ONLY valid JSON: {"grammar":[{"key":"Genus","val":"der/die/das or N/A"},{"key":"Plural","val":"form or N/A"},{"key":"Konjugation","val":"ich/du/er or N/A"},{"key":"Rektion","val":"cases it takes"}],"grammarNote":"key grammar explanation in ${targetLang}"}`;
+  try {
+    const data = await callClaude(prompt, 400);
+    setCache(cacheKey, 'grammar', data);
+    renderGrammar(data);
+  } catch(e) { div.innerHTML = `<div style="color:var(--red);font-size:13px">${e.message}</div>`; }
+}
 
-  // Audio
-  const wordForAudio = d.deWord || '';
-  document.getElementById('play-word-name').textContent = wordForAudio;
-  document.getElementById('forvo-link').href = `https://forvo.com/word/${encodeURIComponent(wordForAudio)}/#de`;
-  document.getElementById('play-btn').onclick = () => playWord(wordForAudio);
-
-  // Grammar
+function renderGrammar(data) {
   const gr = document.getElementById('res-grammar');
-  gr.innerHTML = (d.grammar || []).map(g => `
-    <div class="register-row">
-      <span class="reg-key">${g.key}</span>
-      <span class="reg-val">${g.val}</span>
-    </div>`).join('');
-  document.getElementById('res-grammar-note').textContent = d.grammarNote || '';
+  gr.innerHTML = (data.grammar || []).map(g => `
+    <div class="register-row"><span class="reg-key">${g.key}</span><span class="reg-val">${g.val}</span></div>`).join('');
+  document.getElementById('res-grammar-note').textContent = data.grammarNote || '';
+}
 
-  // Save btn
-  updateSaveBtn(d.deWord);
+// Lazy load: Cross-language tab
+async function loadCrossLang() {
+  if (!currentResult) return;
+  const cacheKey = currentResult._cacheKey;
+  const div = document.getElementById('res-cross-lang');
+
+  // Determine cross language
+  const crossLang = (dirTo === 'ZH' || dirFrom === 'ZH') ? 'Ukrainian' : 'Chinese (Simplified)';
+  const crossLangLabel = crossLang === 'Ukrainian' ? '🇺🇦 Українська' : '🇨🇳 中文';
+  const crossCacheKey = `cross-${crossLang}`;
+
+  const cached = getCacheSection(cacheKey, crossCacheKey);
+  if (cached) { renderCrossLang(cached, crossLangLabel); return; }
+
+  div.innerHTML = '<div style="color:var(--white-30);font-size:13px">加载中...</div>';
+  const prompt = `Translate the German word "${currentResult.deWord}" into ${crossLang}. Also give 2 example sentences with ${crossLang} translations.
+Return ONLY valid JSON: {"translation":"${crossLang} translation","naturalNote":"1-2 sentences in ${crossLang} about natural usage","examples":[{"de":"example","target":"${crossLang} translation"},{"de":"...","target":"..."}]}`;
+  try {
+    const data = await callClaude(prompt, 350);
+    setCache(cacheKey, crossCacheKey, data);
+    renderCrossLang(data, crossLangLabel);
+  } catch(e) { div.innerHTML = `<div style="color:var(--red);font-size:13px">${e.message}</div>`; }
+}
+
+function renderCrossLang(data, label) {
+  document.getElementById('res-cross-lang').innerHTML = `
+    <div style="font-size:13px;color:var(--amber);margin-bottom:8px">${label}</div>
+    <div style="font-size:22px;font-weight:300;margin-bottom:10px">${data.translation || ''}</div>
+    <div style="font-size:13px;color:var(--white-60);margin-bottom:14px;line-height:1.6">${data.naturalNote || ''}</div>
+    ${(data.examples || []).map(ex => `
+      <div class="example-item">
+        <div class="ex-de">${ex.de}</div>
+        <div class="ex-zh">${ex.target}</div>
+      </div>`).join('')}`;
 }
 
 // ══════════════════════════════════════════════
@@ -1442,7 +1538,7 @@ async function callClaude(prompt, maxTokens = 1500) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }]
     })
