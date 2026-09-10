@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d2137">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Deutsch Bridge</title>
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Deutsch Bridge&quot;,&quot;short_name&quot;:&quot;DE Bridge&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#0d2137&quot;,&quot;theme_color&quot;:&quot;#0d2137&quot;}">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d2137;
+  --bg2:#122a45;
+  --bg3:#1a3555;
+  --amber:#e8a838;
+  --amber-dim:#c48820;
+  --amber-glow:rgba(232,168,56,0.15);
+  --white:#f2ede6;
+  --white-60:rgba(242,237,230,0.6);
+  --white-30:rgba(242,237,230,0.3);
+  --white-10:rgba(242,237,230,0.1);
+  --white-05:rgba(242,237,230,0.05);
+  --blue-light:#4a90c4;
+  --green:#3db88a;
+  --red:#e05555;
+  --ukr-blue:#005BBB;
+  --ukr-yellow:#FFD500;
+  --border:rgba(242,237,230,0.12);
+  --radius:10px;
+  --font:'IBM Plex Sans','Noto Sans SC',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--white);font-family:var(--font)}
+
+/* ── SCREENS ── */
+.screen{display:none;position:absolute;inset:0;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* ── USER SELECT ── */
+#screen-user{align-items:center;justify-content:center;gap:0;padding:40px 28px}
+.user-hero{text-align:center;margin-bottom:48px}
+.user-hero h1{font-size:28px;font-weight:300;letter-spacing:-0.5px;margin-bottom:6px}
+.user-hero p{font-size:14px;color:var(--white-60)}
+.user-cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:360px}
+.user-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;cursor:pointer;transition:border-color 0.2s,background 0.2s;
+  display:flex;align-items:center;gap:16px
+}
+.user-card:hover,.user-card:active{border-color:var(--amber);background:var(--bg3)}
+.user-avatar{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0
+}
+.user-avatar.wong{background:rgba(74,144,196,0.2);border:1px solid rgba(74,144,196,0.4)}
+.user-avatar.daria{background:rgba(255,213,0,0.15);border:1px solid rgba(255,213,0,0.3)}
+.user-info h3{font-size:16px;font-weight:500;margin-bottom:3px}
+.user-info p{font-size:12px;color:var(--white-60)}
+.api-setup-link{margin-top:24px;font-size:12px;color:var(--white-30);text-align:center;cursor:pointer}
+.api-setup-link span{color:var(--amber);text-decoration:underline}
+
+/* ── API SETUP ── */
+#screen-api{align-items:center;justify-content:center;padding:32px 24px}
+.api-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:400px}
+.api-card h2{font-size:18px;font-weight:500;margin-bottom:8px}
+.api-card p{font-size:13px;color:var(--white-60);line-height:1.6;margin-bottom:20px}
+.api-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--mono);
+  outline:none;margin-bottom:10px;transition:border-color 0.2s
+}
+.api-input:focus{border-color:var(--amber)}
+.btn-primary{
+  width:100%;background:var(--amber);border:none;border-radius:8px;
+  padding:13px;color:#0d2137;font-size:14px;font-weight:600;
+  cursor:pointer;font-family:var(--font);transition:background 0.2s
+}
+.btn-primary:hover{background:#f0b840}
+.api-note{font-size:11px;color:var(--white-30);margin-top:10px;line-height:1.6;text-align:center}
+.api-note a{color:var(--amber)}
+.back-btn{
+  background:none;border:none;color:var(--white-60);font-size:13px;
+  cursor:pointer;font-family:var(--font);margin-top:16px;display:block;
+  text-align:center;width:100%
+}
+
+/* ── MAIN APP ── */
+#screen-app{flex-direction:column}
+.app-header{
+  padding:14px 20px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;border-bottom:1px solid var(--border);
+  background:var(--bg)
+}
+.app-title{font-size:15px;font-weight:500}
+.header-right{display:flex;align-items:center;gap:12px}
+.lang-pill{
+  background:var(--bg3);border:1px solid var(--border);border-radius:20px;
+  padding:5px 12px;font-size:12px;color:var(--white-60);cursor:pointer;
+  display:flex;align-items:center;gap:6px
+}
+.user-pill{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;border:1px solid var(--border)
+}
+.user-pill.wong{background:rgba(74,144,196,0.2)}
+.user-pill.daria{background:rgba(255,213,0,0.15)}
+
+.tab-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+  flex-shrink:0;z-index:10
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:4px;cursor:pointer;padding:4px 0;transition:color 0.2s
+}
+.nav-icon{font-size:20px}
+.nav-label{font-size:10px;color:var(--white-30);transition:color 0.2s}
+.nav-item.active .nav-label{color:var(--amber)}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 4px var(--amber))}
+
+/* ── SEARCH TAB ── */
+.search-wrap{padding:20px 20px 16px}
+.search-direction{
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  font-size:13px;color:var(--white-60)
+}
+.dir-btn{
+  background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+  padding:5px 12px;font-size:12px;color:var(--white);cursor:pointer;
+  font-family:var(--font);transition:all 0.2s
+}
+.dir-swap{
+  width:30px;height:30px;background:var(--amber-glow);border:1px solid rgba(232,168,56,0.3);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;flex-shrink:0
+}
+.dir-btn.active{background:var(--amber-glow);border-color:var(--amber);color:var(--amber)}
+.search-row{display:flex;gap:10px}
+.search-field{
+  flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;color:var(--white);font-size:16px;font-family:var(--font);
+  outline:none;transition:border-color 0.2s;resize:none;min-height:52px;max-height:120px
+}
+.search-field:focus{border-color:var(--amber)}
+.search-field::placeholder{color:var(--white-30)}
+.search-go{
+  width:52px;height:52px;background:var(--amber);border:none;border-radius:10px;
+  color:#0d2137;font-size:20px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;transition:background 0.2s
+}
+.search-go:hover{background:#f0b840}
+
+/* Result */
+.result-wrap{padding:0 20px}
+.loading-bar{
+  display:none;height:2px;background:var(--bg3);border-radius:2px;margin:0 20px 16px;overflow:hidden
+}
+.loading-bar.active{display:block}
+.loading-bar::after{
+  content:'';display:block;height:100%;background:var(--amber);
+  animation:bar 1.2s ease-in-out infinite;width:40%
+}
+@keyframes bar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
+.result-header{
+  padding:20px 0 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between
+}
+.result-word{font-size:32px;font-weight:300;letter-spacing:-0.5px;line-height:1.1}
+.result-phonetic{font-size:15px;color:var(--amber);margin-top:4px;font-weight:300}
+.result-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.badge{
+  font-size:11px;padding:3px 8px;border-radius:4px;font-weight:500
+}
+.badge-type{background:rgba(74,144,196,0.2);color:#7ab8e8}
+.badge-register{background:rgba(61,184,138,0.15);color:#5dcba8}
+.badge-formal{background:rgba(232,168,56,0.15);color:var(--amber)}
+.badge-warn{background:rgba(224,85,85,0.15);color:#e88}
+.save-btn{
+  width:38px;height:38px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;color:var(--white-60);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all 0.2s;margin-left:12px
+}
+.save-btn.saved{background:var(--amber-glow);border-color:var(--amber);color:var(--amber)}
+
+/* Result sections */
+.res-section{padding:18px 0;border-bottom:1px solid var(--border)}
+.res-section:last-child{border-bottom:none}
+.res-label{font-size:11px;color:var(--amber);letter-spacing:0.5px;font-weight:500;margin-bottom:10px}
+.res-main{font-size:22px;font-weight:300;margin-bottom:8px}
+.res-other{font-size:13px;color:var(--white-60);line-height:2}
+
+/* Register panel */
+.register-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-top:2px
+}
+.register-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+.register-row:not(:last-child){border-bottom:1px solid var(--border)}
+.reg-key{font-size:12px;color:var(--white-60)}
+.reg-val{font-size:13px;font-weight:500}
+.reg-val.green{color:var(--green)}
+.reg-val.amber{color:var(--amber)}
+.reg-val.red{color:var(--red)}
+
+/* Examples */
+.example-item{padding:12px 0;border-bottom:1px solid var(--white-05)}
+.example-item:last-child{border-bottom:none}
+.ex-de{font-size:14px;line-height:1.6;margin-bottom:4px}
+.ex-zh{font-size:13px;color:var(--white-60);line-height:1.5}
+
+/* Phrases */
+.phrase-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--white-05)}
+.phrase-item:last-child{border-bottom:none}
+.ph-de{font-size:13px;color:#b8d4f0;min-width:0;flex:1;line-height:1.5}
+.ph-zh{font-size:13px;color:var(--white-60);flex:1;line-height:1.5}
+
+/* Play button */
+.play-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.play-btn{
+  width:44px;height:44px;background:var(--amber);border:none;border-radius:50%;
+  color:#0d2137;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+.play-info{font-size:13px;color:var(--white-60);line-height:1.5}
+.play-info a{color:var(--amber)}
+
+/* ── EXPRESS TAB ── */
+.express-wrap{padding:20px}
+.express-wrap h2{font-size:18px;font-weight:400;margin-bottom:6px}
+.express-wrap .subtitle{font-size:13px;color:var(--white-60);margin-bottom:20px;line-height:1.5}
+.express-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;color:var(--white);font-size:15px;font-family:var(--font);
+  outline:none;resize:none;min-height:100px;transition:border-color 0.2s;
+  margin-bottom:10px
+}
+.express-input:focus{border-color:var(--amber)}
+.express-input::placeholder{color:var(--white-30)}
+.express-btn{
+  width:100%;background:var(--amber);border:none;border-radius:8px;
+  padding:13px;color:#0d2137;font-size:14px;font-weight:600;
+  cursor:pointer;font-family:var(--font);margin-bottom:24px
+}
+.express-result{display:none}
+.express-result.active{display:block}
+.express-de{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:12px
+}
+.express-de-text{font-size:20px;font-weight:300;margin-bottom:10px;line-height:1.4}
+.express-de-play{
+  background:none;border:1px solid var(--border);border-radius:6px;
+  padding:6px 14px;color:var(--white-60);font-size:12px;cursor:pointer;
+  font-family:var(--font);display:flex;align-items:center;gap:6px
+}
+.express-why{font-size:13px;color:var(--white-60);line-height:1.7}
+.express-alts{margin-top:16px}
+.alt-item{
+  background:var(--bg3);border-radius:8px;padding:12px 14px;
+  margin-bottom:8px;font-size:13px
+}
+.alt-de{color:var(--white);margin-bottom:4px}
+.alt-note{color:var(--white-60);font-size:12px}
+
+/* ── CHECK TAB ── */
+.check-wrap{padding:20px}
+.check-wrap h2{font-size:18px;font-weight:400;margin-bottom:6px}
+.check-wrap .subtitle{font-size:13px;color:var(--white-60);margin-bottom:20px;line-height:1.5}
+.check-result{display:none}
+.check-result.active{display:block}
+.check-segment{
+  background:var(--bg2);border-radius:10px;padding:14px 16px;margin-bottom:12px;
+  border-left:3px solid var(--border)
+}
+.check-segment.ok{border-left-color:var(--green)}
+.check-segment.warn{border-left-color:var(--amber)}
+.check-segment.err{border-left-color:var(--red)}
+.check-original{font-size:15px;margin-bottom:8px;line-height:1.5}
+.check-issue{font-size:13px;color:var(--white-60);margin-bottom:6px;line-height:1.5}
+.check-fix{font-size:13px;color:var(--green);line-height:1.5}
+.check-why{font-size:12px;color:var(--white-30);margin-top:6px;line-height:1.5}
+
+/* ── VOCAB TAB ── */
+.vocab-wrap{padding:16px 20px}
+.vocab-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.vocab-top h2{font-size:17px;font-weight:400}
+.study-btn{
+  background:var(--amber);border:none;border-radius:8px;
+  padding:8px 16px;color:#0d2137;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:var(--font)
+}
+.vocab-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.vtab{
+  padding:8px 16px;font-size:13px;color:var(--white-60);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all 0.2s;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:var(--font)
+}
+.vtab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.vocab-empty{
+  text-align:center;padding:60px 20px;color:var(--white-30);font-size:14px;line-height:1.7
+}
+.vocab-item{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px
+}
+.vocab-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.vocab-word{font-size:17px;font-weight:400;margin-bottom:3px}
+.vocab-trans{font-size:13px;color:var(--white-60)}
+.vocab-meta{display:flex;gap:8px;margin-top:8px}
+.vocab-srs{font-size:11px;color:var(--white-30)}
+.vocab-note-text{font-size:12px;color:var(--amber);margin-top:6px;font-style:italic}
+.vocab-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.vact-btn{
+  width:32px;height:32px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;color:var(--white-60);cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center
+}
+.note-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+  padding:8px 12px;color:var(--white);font-size:13px;font-family:var(--font);
+  outline:none;margin-top:8px;display:none
+}
+.note-input:focus{border-color:var(--amber)}
+.note-input.show{display:block}
+
+/* ── FLASHCARD ── */
+#screen-study{background:var(--bg);padding:0}
+.study-header{
+  padding:16px 20px;display:flex;align-items:center;gap:16px;
+  border-bottom:1px solid var(--border)
+}
+.study-close{
+  background:none;border:none;color:var(--white-60);font-size:22px;
+  cursor:pointer;padding:0;line-height:1
+}
+.study-progress-wrap{flex:1}
+.study-progress-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.study-progress-fill{height:100%;background:var(--amber);border-radius:2px;transition:width 0.3s}
+.study-progress-text{font-size:11px;color:var(--white-30);margin-top:4px;text-align:right}
+.study-mode-toggle{
+  display:flex;gap:8px;padding:16px 20px 0;justify-content:center
+}
+.mode-btn{
+  padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;
+  font-family:var(--font);border:1px solid var(--border);
+  background:transparent;color:var(--white-60);transition:all 0.2s
+}
+.mode-btn.active{background:var(--amber-glow);border-color:var(--amber);color:var(--amber)}
+.card-area{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;perspective:1000px}
+.flashcard{
+  width:100%;max-width:360px;min-height:220px;
+  position:relative;cursor:pointer;transform-style:preserve-3d;
+  transition:transform 0.5s
+}
+.flashcard.flipped{transform:rotateY(180deg)}
+.card-face{
+  position:absolute;inset:0;
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px;backface-visibility:hidden;-webkit-backface-visibility:hidden
+}
+.card-back{transform:rotateY(180deg)}
+.card-hint{font-size:11px;color:var(--white-30);margin-bottom:16px;letter-spacing:0.5px}
+.card-content{font-size:26px;font-weight:300;text-align:center;line-height:1.3}
+.card-sub{font-size:14px;color:var(--white-60);margin-top:8px;text-align:center}
+.card-phonetic{font-size:15px;color:var(--amber);margin-top:6px}
+.study-actions{
+  padding:20px;display:flex;gap:12px;flex-shrink:0
+}
+.study-action{
+  flex:1;padding:14px;border-radius:10px;border:1px solid var(--border);
+  font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);
+  background:transparent;color:var(--white);transition:all 0.2s;text-align:center
+}
+.study-action.again{border-color:var(--red);color:var(--red)}
+.study-action.hard{border-color:var(--amber);color:var(--amber)}
+.study-action.good{background:var(--green);border-color:var(--green);color:#fff}
+.study-action.easy{background:var(--blue-light);border-color:var(--blue-light);color:#fff}
+/* Dictation */
+.dictation-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:14px;color:var(--white);font-size:18px;font-family:var(--font);
+  outline:none;text-align:center;margin-top:16px;transition:border-color 0.2s
+}
+.dictation-input.correct{border-color:var(--green);background:rgba(61,184,138,0.1)}
+.dictation-input.wrong{border-color:var(--red);background:rgba(224,85,85,0.1)}
+.study-done{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:40px;text-align:center
+}
+.done-emoji{font-size:48px;margin-bottom:16px}
+.done-title{font-size:22px;font-weight:300;margin-bottom:8px}
+.done-sub{font-size:14px;color:var(--white-60);line-height:1.6}
+
+/* ── LANG SELECTOR ── */
+#screen-lang{align-items:center;justify-content:center;padding:32px 24px}
+.lang-options{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px}
+.lang-option{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;
+  transition:border-color 0.2s
+}
+.lang-option:hover,.lang-option.active{border-color:var(--amber)}
+.lang-flag{font-size:24px}
+.lang-name{font-size:15px;font-weight:400}
+.lang-native{font-size:12px;color:var(--white-60)}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:10px 20px;font-size:13px;color:var(--white);
+  opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;z-index:100
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+
+/* ── ERROR ── */
+.error-msg{
+  background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.3);
+  border-radius:8px;padding:12px 16px;font-size:13px;color:#e88;
+  margin:12px 0;display:none
+}
+.error-msg.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- USER SELECT -->
+<div class="screen active" id="screen-user">
+  <div class="user-hero">
+    <h1>Deutsch Bridge</h1>
+    <p>你的德语学习伙伴</p>
+  </div>
+  <div class="user-cards">
+    <div class="user-card" onclick="selectUser('wong')">
+      <div class="user-avatar wong">🇨🇳</div>
+      <div class="user-info">
+        <h3>Wong</h3>
+        <p>中文 ↔ 德语</p>
+      </div>
+    </div>
+    <div class="user-card" onclick="selectUser('daria')">
+      <div class="user-avatar daria">🇺🇦</div>
+      <div class="user-info">
+        <h3>Daria</h3>
+        <p>Українська ↔ Deutsch</p>
+      </div>
+    </div>
+  </div>
+  <div class="api-setup-link" onclick="showScreen('screen-api')">
+    需要设置 API Key？<span>点击这里</span>
+  </div>
+</div>
+
+<!-- API SETUP -->
+<div class="screen" id="screen-api">
+  <div class="api-card">
+    <h2>Claude API Key</h2>
+    <p>本工具使用 Claude AI 实现翻译和分析功能。Key 仅储存在你的设备本地。</p>
+    <input class="api-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+    <button class="btn-primary" onclick="saveApiKey()">保存并开始</button>
+    <div class="api-note">
+      获取 Key：<a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>
+      按用量计费，查几百个词花费极少
+    </div>
+    <button class="back-btn" onclick="showScreen('screen-user')">← 返回</button>
+  </div>
+</div>
+
+<!-- LANG SELECT -->
+<div class="screen" id="screen-lang">
+  <div style="font-size:18px;font-weight:400;margin-bottom:24px;text-align:center">选择界面语言</div>
+  <div class="lang-options">
+    <div class="lang-option" onclick="setLang('zh')">
+      <div class="lang-flag">🇨🇳</div>
+      <div><div class="lang-name">中文</div><div class="lang-native">Chinese</div></div>
+    </div>
+    <div class="lang-option" onclick="setLang('de')">
+      <div class="lang-flag">🇩🇪</div>
+      <div><div class="lang-name">Deutsch</div><div class="lang-native">German</div></div>
+    </div>
+    <div class="lang-option" onclick="setLang('uk')">
+      <div class="lang-flag">🇺🇦</div>
+      <div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="screen" id="screen-app">
+  <div class="app-header">
+    <div class="app-title" id="app-title">Deutsch Bridge</div>
+    <div class="header-right">
+      <div class="lang-pill" onclick="showScreen('screen-lang')" id="lang-pill">🌐 中文</div>
+      <div class="user-pill" id="user-pill" onclick="showScreen('screen-user')"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-content">
+    <!-- SEARCH -->
+    <div id="tab-search" style="display:block">
+      <div class="search-wrap">
+        <div class="search-direction">
+          <button class="dir-btn active" id="dir-a" onclick="setDir(0)">DE</button>
+          <div class="dir-swap" onclick="swapDir()">⇌</div>
+          <button class="dir-btn" id="dir-b" onclick="setDir(1)">ZH</button>
+        </div>
+        <div class="search-row">
+          <textarea class="search-field" id="search-input" rows="1"
+            placeholder="Suchen... / 搜索... / Пошук..."
+            oninput="autoResize(this)"></textarea>
+          <button class="search-go" onclick="doSearch()">→</button>
+        </div>
+        <div class="error-msg" id="search-error"></div>
+      </div>
+      <div class="loading-bar" id="loading-bar"></div>
+      <div class="result-wrap" id="result-wrap" style="display:none">
+        <div class="result-header">
+          <div>
+            <div class="result-word" id="res-word"></div>
+            <div class="result-phonetic" id="res-phonetic"></div>
+            <div class="result-badges" id="res-badges"></div>
+          </div>
+          <button class="save-btn" id="save-btn" onclick="toggleSave()">☆</button>
+        </div>
+        <!-- Translation -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-translation">翻译</div>
+          <div class="res-main" id="res-translation"></div>
+          <div class="res-other" id="res-other"></div>
+        </div>
+        <!-- Register -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-usage">使用场景</div>
+          <div class="register-panel" id="res-register"></div>
+        </div>
+        <!-- Natural usage -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-natural">地道表达指南</div>
+          <div class="express-why" id="res-natural"></div>
+        </div>
+        <!-- Examples -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-examples">例句</div>
+          <div id="res-examples"></div>
+        </div>
+        <!-- Phrases -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-phrases">常用词组</div>
+          <div id="res-phrases"></div>
+        </div>
+        <!-- Audio -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-audio">发音</div>
+          <div class="play-row">
+            <button class="play-btn" onclick="playWord()" id="play-btn">▶</button>
+            <div class="play-info">
+              <span id="play-word-name"></span><br>
+              浏览器德语语音 · <a href="#" id="forvo-link" target="_blank">Forvo母语者发音</a>
+            </div>
+          </div>
+        </div>
+        <!-- Grammar -->
+        <div class="res-section">
+          <div class="res-label" id="lbl-grammar">语法</div>
+          <div class="register-panel" id="res-grammar"></div>
+          <div class="express-why" id="res-grammar-note" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPRESS -->
+    <div id="tab-express" style="display:none">
+      <div class="express-wrap">
+        <h2 id="exp-title">表达助手</h2>
+        <div class="subtitle" id="exp-sub">用中文说出你想表达的意思，获得地道的德语表达</div>
+        <textarea class="express-input" id="express-input" rows="4"
+          placeholder="例：我想说我这周很忙，没时间见面，但我很想念你..."></textarea>
+        <div class="error-msg" id="express-error"></div>
+        <button class="express-btn" id="exp-btn" onclick="doExpress()">获取地道德语表达</button>
+        <div class="express-result" id="express-result">
+          <div class="res-label" id="exp-lbl-main">推荐表达</div>
+          <div class="express-de" style="margin-bottom:16px">
+            <div class="express-de-text" id="exp-main-de"></div>
+            <div class="result-badges" id="exp-badges" style="margin-bottom:10px"></div>
+            <button class="express-de-play" onclick="playExpressResult()">▶ 朗读</button>
+          </div>
+          <div class="res-label" id="exp-lbl-why">为什么这么说</div>
+          <div class="express-why" id="exp-why"></div>
+          <div class="express-alts" id="exp-alts"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECK -->
+    <div id="tab-check" style="display:none">
+      <div class="check-wrap">
+        <h2 id="chk-title">文本检查</h2>
+        <div class="subtitle" id="chk-sub">粘贴你写的德语，检查语法和表达是否自然</div>
+        <textarea class="express-input" id="check-input" rows="5"
+          placeholder="例：Ich bin sehr beschäftigt diese Woche..."></textarea>
+        <div class="error-msg" id="check-error"></div>
+        <button class="express-btn" id="chk-btn" onclick="doCheck()">检查文本</button>
+        <div class="check-result" id="check-result">
+          <div class="res-label" id="chk-lbl-overall">总体评价</div>
+          <div class="express-why" id="chk-overall" style="margin-bottom:16px"></div>
+          <div class="res-label" id="chk-lbl-detail">逐句分析</div>
+          <div id="chk-segments"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOCAB -->
+    <div id="tab-vocab" style="display:none">
+      <div class="vocab-wrap">
+        <div class="vocab-top">
+          <h2 id="vocab-title">生词本</h2>
+          <button class="study-btn" onclick="startStudy()" id="study-btn">开始复习</button>
+        </div>
+        <div class="vocab-tabs">
+          <button class="vtab active" onclick="switchVtab('list')" id="vtab-list">列表</button>
+          <button class="vtab" onclick="switchVtab('due')" id="vtab-due">待复习 <span id="due-count"></span></button>
+        </div>
+        <div id="vocab-list-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-search" onclick="switchTab('search')">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label" id="nl-search">查词</div>
+    </div>
+    <div class="nav-item" id="nav-express" onclick="switchTab('express')">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label" id="nl-express">表达</div>
+    </div>
+    <div class="nav-item" id="nav-check" onclick="switchTab('check')">
+      <div class="nav-icon">✅</div>
+      <div class="nav-label" id="nl-check">检查</div>
+    </div>
+    <div class="nav-item" id="nav-vocab" onclick="switchTab('vocab')">
+      <div class="nav-icon">📚</div>
+      <div class="nav-label" id="nl-vocab">生词本</div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDY SCREEN -->
+<div class="screen" id="screen-study">
+  <div class="study-header">
+    <button class="study-close" onclick="endStudy()">×</button>
+    <div class="study-progress-wrap">
+      <div class="study-progress-bar"><div class="study-progress-fill" id="study-fill" style="width:0%"></div></div>
+      <div class="study-progress-text" id="study-progress-text">0 / 0</div>
+    </div>
+  </div>
+  <div class="study-mode-toggle">
+    <button class="mode-btn active" onclick="setStudyMode('flash')" id="mode-flash">闪卡</button>
+    <button class="mode-btn" onclick="setStudyMode('dictation')" id="mode-dictation">听写</button>
+  </div>
+  <div class="card-area" id="card-area">
+    <!-- Dynamic content -->
+  </div>
+  <div class="study-done" id="study-done" style="display:none">
+    <div class="done-emoji">🎉</div>
+    <div class="done-title" id="done-title">复习完成！</div>
+    <div class="done-sub" id="done-sub"></div>
+    <button class="btn-primary" style="margin-top:24px;width:200px" onclick="endStudy()">返回生词本</button>
+  </div>
+  <div class="study-actions" id="study-actions"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let apiKey = localStorage.getItem('db-api-key') || '';
+let currentUser = ''; // 'wong' | 'daria'
+let uiLang = 'zh';
+let dirFrom = 'DE', dirTo = 'ZH';
+let currentResult = null;
+let studyQueue = [];
+let studyIndex = 0;
+let studyMode = 'flash';
+let cardFlipped = false;
+let expressResult = null;
+
+// Per-user vocab: { word, translation, phonetic, added, interval, due, ease, notes }
+function getVocab() {
+  return JSON.parse(localStorage.getItem(`db-vocab-${currentUser}`) || '[]');
+}
+function saveVocab(v) {
+  localStorage.setItem(`db-vocab-${currentUser}`, JSON.stringify(v));
+}
+function getLang() {
+  return localStorage.getItem(`db-lang-${currentUser}`) || 'zh';
+}
+function saveLangPref(l) {
+  localStorage.setItem(`db-lang-${currentUser}`, l);
+}
+
+// ══════════════════════════════════════════════
+//  I18N
+// ══════════════════════════════════════════════
+const T = {
+  zh: {
+    search:'查词', express:'表达', check:'检查', vocab:'生词本',
+    translation:'翻译', usage:'使用场景', natural:'地道表达指南',
+    examples:'例句', phrases:'常用词组', audio:'发音', grammar:'语法',
+    expTitle:'表达助手', expSub:'用中文说出你想表达的意思，获得地道的德语表达',
+    expBtn:'获取地道德语表达', expMain:'推荐表达', expWhy:'为什么这么说',
+    chkTitle:'文本检查', chkSub:'粘贴你写的德语，检查语法和表达是否自然',
+    chkBtn:'检查文本', chkOverall:'总体评价', chkDetail:'逐句分析',
+    vocabTitle:'生词本', studyBtn:'开始复习', listTab:'列表', dueTab:'待复习',
+    doneTitle:'复习完成！', langLabel:'🌐 中文', flashMode:'闪卡', dictMode:'听写',
+    again:'重来', hard:'困难', good:'掌握', easy:'轻松',
+    savedToast:'已收藏', unsavedToast:'已取消收藏',
+    emptyVocab:'生词本为空\n查词后点击 ☆ 收藏',
+    expInputPlaceholder:'例：我想说我这周很忙，没时间见面，但我很想念你...',
+    chkInputPlaceholder:'例：Ich bin sehr beschäftigt diese Woche...',
+  },
+  de: {
+    search:'Suchen', express:'Ausdruck', check:'Prüfen', vocab:'Vokabeln',
+    translation:'Übersetzung', usage:'Verwendung', natural:'Natürlicher Ausdruck',
+    examples:'Beispiele', phrases:'Redewendungen', audio:'Aussprache', grammar:'Grammatik',
+    expTitle:'Ausdruckshelfer', expSub:'Beschreibe auf Ukrainisch, was du sagen möchtest',
+    expBtn:'Deutschen Ausdruck finden', expMain:'Empfohlener Ausdruck', expWhy:'Warum so?',
+    chkTitle:'Textprüfung', chkSub:'Deinen deutschen Text auf Grammatik prüfen',
+    chkBtn:'Text prüfen', chkOverall:'Gesamtbewertung', chkDetail:'Satz für Satz',
+    vocabTitle:'Vokabelheft', studyBtn:'Lernen starten', listTab:'Liste', dueTab:'Fällig',
+    doneTitle:'Fertig!', langLabel:'🌐 Deutsch', flashMode:'Karten', dictMode:'Diktat',
+    again:'Nochmal', hard:'Schwer', good:'Gut', easy:'Leicht',
+    savedToast:'Gespeichert', unsavedToast:'Entfernt',
+    emptyVocab:'Noch keine Vokabeln\nSuche ein Wort und klicke ☆',
+    expInputPlaceholder:'z.B. Ich will sagen, dass ich diese Woche sehr beschäftigt bin...',
+    chkInputPlaceholder:'z.B. Ich bin sehr beschäftigt diese Woche...',
+  },
+  uk: {
+    search:'Пошук', express:'Вираз', check:'Перевірка', vocab:'Словник',
+    translation:'Переклад', usage:'Використання', natural:'Природний вираз',
+    examples:'Приклади', phrases:'Фрази', audio:'Вимова', grammar:'Граматика',
+    expTitle:'Помічник виразу', expSub:'Скажи українською, що хочеш висловити, і отримай природний вираз німецькою',
+    expBtn:'Знайти вираз', expMain:'Рекомендований вираз', expWhy:'Чому саме так?',
+    chkTitle:'Перевірка тексту', chkSub:'Встав свій текст німецькою для перевірки граматики',
+    chkBtn:'Перевірити', chkOverall:'Загальна оцінка', chkDetail:'Аналіз речень',
+    vocabTitle:'Мій словник', studyBtn:'Почати вивчення', listTab:'Список', dueTab:'До повторення',
+    doneTitle:'Молодець!', langLabel:'🌐 Українська', flashMode:'Картки', dictMode:'Диктант',
+    again:'Ще раз', hard:'Важко', good:'Добре', easy:'Легко',
+    savedToast:'Збережено', unsavedToast:'Видалено',
+    emptyVocab:'Словник порожній\nШукай слова і натискай ☆',
+    expInputPlaceholder:'Напр.: Я хочу сказати, що цього тижня дуже зайнята...',
+    chkInputPlaceholder:'Напр.: Ich bin sehr beschäftigt diese Woche...',
+  }
+};
+
+function t(key) { return T[uiLang]?.[key] || T.zh[key] || key; }
+
+function applyI18n() {
+  const d = document;
+  d.getElementById('nl-search').textContent = t('search');
+  d.getElementById('nl-express').textContent = t('express');
+  d.getElementById('nl-check').textContent = t('check');
+  d.getElementById('nl-vocab').textContent = t('vocab');
+  d.getElementById('lbl-translation').textContent = t('translation');
+  d.getElementById('lbl-usage').textContent = t('usage');
+  d.getElementById('lbl-natural').textContent = t('natural');
+  d.getElementById('lbl-examples').textContent = t('examples');
+  d.getElementById('lbl-phrases').textContent = t('phrases');
+  d.getElementById('lbl-audio').textContent = t('audio');
+  d.getElementById('lbl-grammar').textContent = t('grammar');
+  d.getElementById('exp-title').textContent = t('expTitle');
+  d.getElementById('exp-sub').textContent = t('expSub');
+  d.getElementById('exp-btn').textContent = t('expBtn');
+  d.getElementById('exp-lbl-main').textContent = t('expMain');
+  d.getElementById('exp-lbl-why').textContent = t('expWhy');
+  d.getElementById('chk-title').textContent = t('chkTitle');
+  d.getElementById('chk-sub').textContent = t('chkSub');
+  d.getElementById('chk-btn').textContent = t('chkBtn');
+  d.getElementById('chk-lbl-overall').textContent = t('chkOverall');
+  d.getElementById('chk-lbl-detail').textContent = t('chkDetail');
+  d.getElementById('vocab-title').textContent = t('vocabTitle');
+  d.getElementById('study-btn').textContent = t('studyBtn');
+  d.getElementById('vtab-list').textContent = t('listTab');
+  d.getElementById('lang-pill').textContent = t('langLabel');
+  d.getElementById('express-input').placeholder = t('expInputPlaceholder');
+  d.getElementById('check-input').placeholder = t('chkInputPlaceholder');
+  // direction labels
+  updateDirLabels();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+function init() {
+  apiKey = localStorage.getItem('db-api-key') || '';
+  if (!apiKey) {
+    showScreen('screen-api');
+    return;
+  }
+  showScreen('screen-user');
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSearch(); }
+  });
+}
+
+function selectUser(user) {
+  currentUser = user;
+  uiLang = getLang();
+  const pill = document.getElementById('user-pill');
+  pill.textContent = user === 'wong' ? '🇨🇳' : '🇺🇦';
+  pill.className = 'user-pill ' + user;
+  // Default direction based on user
+  if (user === 'daria') { dirFrom = 'DE'; dirTo = 'UK'; }
+  else { dirFrom = 'DE'; dirTo = 'ZH'; }
+  applyI18n();
+  showScreen('screen-app');
+  renderVocabList();
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key || !key.startsWith('sk-')) { showToast('请输入有效的 API Key'); return; }
+  localStorage.setItem('db-api-key', key);
+  apiKey = key;
+  showScreen('screen-user');
+}
+
+// ══════════════════════════════════════════════
+//  SCREENS & TABS
+// ══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(name) {
+  ['search','express','check','vocab'].forEach(n => {
+    document.getElementById('tab-'+n).style.display = n === name ? 'block' : 'none';
+    document.getElementById('nav-'+n).classList.toggle('active', n === name);
+  });
+  if (name === 'vocab') renderVocabList();
+}
+
+function switchVtab(name) {
+  ['list','due'].forEach(n => {
+    document.getElementById('vtab-'+n).classList.toggle('active', n === name);
+  });
+  renderVocabList(name);
+}
+
+// ══════════════════════════════════════════════
+//  LANG
+// ══════════════════════════════════════════════
+function setLang(lang) {
+  uiLang = lang;
+  saveLangPref(lang);
+  applyI18n();
+  showScreen('screen-app');
+}
+
+// ══════════════════════════════════════════════
+//  SEARCH DIRECTION
+// ══════════════════════════════════════════════
+const langLabels = {
+  ZH:'中文', DE:'Deutsch', UK:'Українська',
+  zh:'中文', de:'Deutsch', uk:'Українська'
+};
+
+function updateDirLabels() {
+  document.getElementById('dir-a').textContent = dirFrom;
+  document.getElementById('dir-b').textContent = dirTo;
+}
+
+function setDir(idx) {
+  document.getElementById('dir-a').classList.toggle('active', idx===0);
+  document.getElementById('dir-b').classList.toggle('active', idx===1);
+}
+
+function swapDir() {
+  [dirFrom, dirTo] = [dirTo, dirFrom];
+  updateDirLabels();
+}
+
+// ══════════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════════
+async function doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+  if (!apiKey) { showScreen('screen-api'); return; }
+
+  setLoading(true);
+  hideEl('result-wrap');
+  hideError('search-error');
+
+  const prompt = buildSearchPrompt(query);
+  try {
+    const data = await callClaude(prompt, 2000);
+    currentResult = data;
+    renderSearchResult(data);
+    showEl('result-wrap');
+  } catch(e) {
+    showError('search-error', e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function buildSearchPrompt(query) {
+  const user = currentUser === 'daria' ? 'Ukrainian speaker learning German' : 'Chinese speaker learning German';
+  const targetLang = dirTo === 'ZH' ? 'Chinese (Simplified)' : dirTo === 'UK' ? 'Ukrainian' : 'German';
+  const sourceLang = dirFrom === 'DE' ? 'German' : dirFrom === 'ZH' ? 'Chinese' : 'Ukrainian';
+
+  return `You are an expert German dictionary for a ${user}. Input: "${query}" (${sourceLang} → ${targetLang})
+
+Return ONLY valid JSON (no markdown):
+{
+  "deWord": "the German word/phrase",
+  "targetTranslation": "translation in ${targetLang}",
+  "phonetic": "IPA e.g. [ˈbaɪʃpiːl]",
+  "wordType": "e.g. das Substantiv (n.) / Verb / Adjektiv",
+  "register": "colloquial/neutral/formal/literary/vulgar",
+  "frequency": "very common/common/uncommon/rare",
+  "formality": "casual/neutral/formal",
+  "otherMeanings": ["alt meaning 1 in ${targetLang}", "alt meaning 2"],
+  "naturalUsageGuide": "Detailed guide (3-5 sentences in ${targetLang}): when to use this word, common mistakes learners make, how native speakers actually use it, any regional or contextual nuance, is it more spoken or written",
+  "grammar": [
+    {"key": "Genus", "val": "der/die/das or N/A"},
+    {"key": "Plural", "val": "plural form or N/A"},
+    {"key": "Konjugation", "val": "ich/du/er form or N/A"},
+    {"key": "Rektion", "val": "which case it takes"}
+  ],
+  "grammarNote": "Key grammar point in ${targetLang}",
+  "examples": [
+    {"de": "German example sentence", "target": "${targetLang} translation", "context": "casual/formal/written"},
+    {"de": "...", "target": "...", "context": "..."},
+    {"de": "...", "target": "...", "context": "..."}
+  ],
+  "phrases": [
+    {"de": "phrase or Redewendung", "target": "meaning in ${targetLang}"},
+    {"de": "...", "target": "..."},
+    {"de": "...", "target": "..."},
+    {"de": "...", "target": "..."},
+    {"de": "...", "target": "..."}
+  ]
+}`;
+}
+
+function renderSearchResult(d) {
+  document.getElementById('res-word').textContent = d.deWord || '';
+  document.getElementById('res-phonetic').textContent = d.phonetic || '';
+
+  // Badges
+  const badges = document.getElementById('res-badges');
+  badges.innerHTML = '';
+  if (d.wordType) badges.innerHTML += `<span class="badge badge-type">${d.wordType}</span>`;
+  if (d.register) {
+    const isColloquial = /colloquial|umgangs|slang/i.test(d.register);
+    const isFormal = /formal|schriftlich/i.test(d.register);
+    badges.innerHTML += `<span class="badge badge-register">${d.register}</span>`;
+  }
+  if (d.formality) badges.innerHTML += `<span class="badge badge-formal">${d.formality}</span>`;
+  if (d.frequency) badges.innerHTML += `<span class="badge badge-type">${d.frequency}</span>`;
+
+  // Translation
+  document.getElementById('res-translation').textContent = d.targetTranslation || '';
+  document.getElementById('res-other').textContent = (d.otherMeanings || []).join(' · ');
+
+  // Register panel
+  const reg = document.getElementById('res-register');
+  reg.innerHTML = [
+    {k:'语体', v: d.register || '—'},
+    {k:'正式度', v: d.formality || '—'},
+    {k:'使用频率', v: d.frequency || '—'}
+  ].map(r => `
+    <div class="register-row">
+      <span class="reg-key">${r.k}</span>
+      <span class="reg-val">${r.v}</span>
+    </div>`).join('');
+
+  // Natural usage
+  document.getElementById('res-natural').textContent = d.naturalUsageGuide || '';
+
+  // Examples
+  const exDiv = document.getElementById('res-examples');
+  exDiv.innerHTML = (d.examples || []).map(ex => `
+    <div class="example-item">
+      <div class="ex-de">${ex.de} <span style="font-size:11px;color:var(--amber);margin-left:6px">${ex.context||''}</span></div>
+      <div class="ex-zh">${ex.target}</div>
+    </div>`).join('');
+
+  // Phrases
+  const phDiv = document.getElementById('res-phrases');
+  phDiv.innerHTML = (d.phrases || []).map(p => `
+    <div class="phrase-item">
+      <div class="ph-de">${p.de}</div>
+      <div class="ph-zh">${p.target}</div>
+    </div>`).join('');
+
+  // Audio
+  const wordForAudio = d.deWord || '';
+  document.getElementById('play-word-name').textContent = wordForAudio;
+  document.getElementById('forvo-link').href = `https://forvo.com/word/${encodeURIComponent(wordForAudio)}/#de`;
+  document.getElementById('play-btn').onclick = () => playWord(wordForAudio);
+
+  // Grammar
+  const gr = document.getElementById('res-grammar');
+  gr.innerHTML = (d.grammar || []).map(g => `
+    <div class="register-row">
+      <span class="reg-key">${g.key}</span>
+      <span class="reg-val">${g.val}</span>
+    </div>`).join('');
+  document.getElementById('res-grammar-note').textContent = d.grammarNote || '';
+
+  // Save btn
+  updateSaveBtn(d.deWord);
+}
+
+// ══════════════════════════════════════════════
+//  EXPRESS
+// ══════════════════════════════════════════════
+async function doExpress() {
+  const input = document.getElementById('express-input').value.trim();
+  if (!input) return;
+  if (!apiKey) { showScreen('screen-api'); return; }
+
+  const btn = document.getElementById('exp-btn');
+  btn.textContent = '...';
+  btn.disabled = true;
+  hideError('express-error');
+  document.getElementById('express-result').classList.remove('active');
+
+  const userLang = currentUser === 'daria' ? 'Ukrainian' : 'Chinese';
+  const prompt = `You are a German language expert helping a ${userLang} speaker express themselves naturally in German.
+
+User wants to express (in ${userLang} or mixed): "${input}"
+
+Return ONLY valid JSON:
+{
+  "mainExpression": "the most natural German expression",
+  "phonetic": "[IPA]",
+  "register": "casual/neutral/formal",
+  "formality": "casual/neutral/formal",
+  "isSpoken": true/false,
+  "explanation": "3-4 sentences in ${userLang}: why this is the most natural way, what makes it sound native, any cultural nuance",
+  "alternatives": [
+    {"de": "alternative 1", "note": "when to use this instead (in ${userLang})"},
+    {"de": "alternative 2", "note": "..."}
+  ]
+}`;
+
+  try {
+    const data = await callClaude(prompt, 1000);
+    expressResult = data;
+    renderExpress(data);
+    document.getElementById('express-result').classList.add('active');
+  } catch(e) {
+    showError('express-error', e.message);
+  } finally {
+    btn.textContent = t('expBtn');
+    btn.disabled = false;
+  }
+}
+
+function renderExpress(d) {
+  document.getElementById('exp-main-de').textContent = d.mainExpression || '';
+  const badges = document.getElementById('exp-badges');
+  badges.innerHTML = '';
+  if (d.register) badges.innerHTML += `<span class="badge badge-register">${d.register}</span>`;
+  if (d.isSpoken !== undefined)
+    badges.innerHTML += `<span class="badge badge-type">${d.isSpoken ? '口语' : '书面语'}</span>`;
+  document.getElementById('exp-why').textContent = d.explanation || '';
+  const alts = document.getElementById('exp-alts');
+  alts.innerHTML = (d.alternatives || []).map(a => `
+    <div class="alt-item">
+      <div class="alt-de">${a.de}</div>
+      <div class="alt-note">${a.note}</div>
+    </div>`).join('');
+}
+
+function playExpressResult() {
+  if (expressResult?.mainExpression) playWord(expressResult.mainExpression);
+}
+
+// ══════════════════════════════════════════════
+//  CHECK
+// ══════════════════════════════════════════════
+async function doCheck() {
+  const input = document.getElementById('check-input').value.trim();
+  if (!input) return;
+  if (!apiKey) { showScreen('screen-api'); return; }
+
+  const btn = document.getElementById('chk-btn');
+  btn.textContent = '...';
+  btn.disabled = true;
+  hideError('check-error');
+  document.getElementById('check-result').classList.remove('active');
+
+  const userLang = currentUser === 'daria' ? 'Ukrainian' : 'Chinese';
+  const prompt = `You are a German language teacher. Analyze this German text written by a ${userLang} speaker learning German.
+
+Text: "${input}"
+
+Return ONLY valid JSON:
+{
+  "overallAssessment": "Overall feedback in ${userLang} (2-3 sentences: what's good, main issue)",
+  "overallLevel": "good/ok/needs_work",
+  "segments": [
+    {
+      "original": "original sentence or phrase",
+      "status": "ok/warning/error",
+      "issue": "what's wrong or awkward (in ${userLang}), or null if ok",
+      "suggestion": "corrected version in German, or null if ok",
+      "explanation": "why in ${userLang} (grammar rule, natural usage reason)"
+    }
+  ]
+}`;
+
+  try {
+    const data = await callClaude(prompt, 1500);
+    renderCheck(data);
+    document.getElementById('check-result').classList.add('active');
+  } catch(e) {
+    showError('check-error', e.message);
+  } finally {
+    btn.textContent = t('chkBtn');
+    btn.disabled = false;
+  }
+}
+
+function renderCheck(d) {
+  document.getElementById('chk-overall').textContent = d.overallAssessment || '';
+  const segs = document.getElementById('chk-segments');
+  segs.innerHTML = (d.segments || []).map(s => `
+    <div class="check-segment ${s.status}">
+      <div class="check-original">"${s.original}"</div>
+      ${s.issue ? `<div class="check-issue">⚠ ${s.issue}</div>` : ''}
+      ${s.suggestion ? `<div class="check-fix">✓ ${s.suggestion}</div>` : ''}
+      ${s.explanation ? `<div class="check-why">${s.explanation}</div>` : ''}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+//  VOCABULARY
+// ══════════════════════════════════════════════
+function toggleSave() {
+  if (!currentResult) return;
+  const vocab = getVocab();
+  const word = currentResult.deWord;
+  const idx = vocab.findIndex(v => v.word === word);
+  if (idx >= 0) {
+    vocab.splice(idx, 1);
+    showToast(t('unsavedToast'));
+  } else {
+    vocab.unshift({
+      word,
+      translation: currentResult.targetTranslation || '',
+      phonetic: currentResult.phonetic || '',
+      added: Date.now(),
+      interval: 1,
+      due: Date.now(),
+      ease: 2.5,
+      notes: ''
+    });
+    showToast(t('savedToast'));
+  }
+  saveVocab(vocab);
+  updateSaveBtn(word);
+}
+
+function updateSaveBtn(word) {
+  const vocab = getVocab();
+  const saved = vocab.some(v => v.word === word);
+  const btn = document.getElementById('save-btn');
+  btn.textContent = saved ? '★' : '☆';
+  btn.className = saved ? 'save-btn saved' : 'save-btn';
+}
+
+function renderVocabList(filter = 'list') {
+  const vocab = getVocab();
+  const now = Date.now();
+  const due = vocab.filter(v => v.due <= now);
+  document.getElementById('due-count').textContent = due.length > 0 ? `(${due.length})` : '';
+
+  const items = filter === 'due' ? due : vocab;
+  const container = document.getElementById('vocab-list-content');
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="vocab-empty">${t('emptyVocab')}</div>`;
+    return;
+  }
+
+  container.innerHTML = items.map((v, i) => {
+    const dueStr = v.due <= now ? '📌 待复习' : `下次复习: ${new Date(v.due).toLocaleDateString()}`;
+    return `
+    <div class="vocab-item" id="vi-${i}">
+      <div class="vocab-item-top">
+        <div>
+          <div class="vocab-word">${v.word}</div>
+          <div class="vocab-trans">${v.translation}</div>
+          ${v.notes ? `<div class="vocab-note-text">📝 ${v.notes}</div>` : ''}
+        </div>
+        <div class="vocab-actions">
+          <button class="vact-btn" onclick="toggleNote(${i})" title="笔记">📝</button>
+          <button class="vact-btn" onclick="playWord('${v.word.replace(/'/g,"\\'")}')">▶</button>
+          <button class="vact-btn" onclick="deleteVocab(${i})" style="color:var(--red)">×</button>
+        </div>
+      </div>
+      <div class="vocab-meta"><span class="vocab-srs">${dueStr} · ${v.phonetic}</span></div>
+      <input class="note-input" id="note-${i}" value="${v.notes||''}"
+        placeholder="添加笔记..."
+        onblur="saveNote(${i}, this.value)"
+        onkeydown="if(event.key==='Enter'){saveNote(${i},this.value);this.classList.remove('show')}" />
+    </div>`;
+  }).join('');
+}
+
+function toggleNote(idx) {
+  const el = document.getElementById(`note-${idx}`);
+  el.classList.toggle('show');
+  if (el.classList.contains('show')) el.focus();
+}
+
+function saveNote(idx, val) {
+  const vocab = getVocab();
+  if (idx < vocab.length) {
+    vocab[idx].notes = val;
+    saveVocab(vocab);
+    renderVocabList();
+  }
+}
+
+function deleteVocab(idx) {
+  const vocab = getVocab();
+  vocab.splice(idx, 1);
+  saveVocab(vocab);
+  renderVocabList();
+}
+
+// ══════════════════════════════════════════════
+//  STUDY (SRS)
+// ══════════════════════════════════════════════
+function startStudy() {
+  const vocab = getVocab();
+  const now = Date.now();
+  studyQueue = vocab.filter(v => v.due <= now);
+  if (studyQueue.length === 0) {
+    studyQueue = [...vocab].slice(0, 10);
+  }
+  studyQueue = shuffle(studyQueue);
+  studyIndex = 0;
+  cardFlipped = false;
+  showScreen('screen-study');
+  document.getElementById('study-done').style.display = 'none';
+  document.getElementById('study-actions').style.display = 'flex';
+  renderStudyCard();
+}
+
+function setStudyMode(mode) {
+  studyMode = mode;
+  document.getElementById('mode-flash').classList.toggle('active', mode === 'flash');
+  document.getElementById('mode-dictation').classList.toggle('active', mode === 'dictation');
+  cardFlipped = false;
+  renderStudyCard();
+}
+
+function renderStudyCard() {
+  const total = studyQueue.length;
+  if (studyIndex >= total) {
+    showStudyDone();
+    return;
+  }
+
+  const pct = Math.round((studyIndex / total) * 100);
+  document.getElementById('study-fill').style.width = pct + '%';
+  document.getElementById('study-progress-text').textContent = `${studyIndex} / ${total}`;
+
+  const card = studyQueue[studyIndex];
+  const area = document.getElementById('card-area');
+  const actions = document.getElementById('study-actions');
+
+  if (studyMode === 'flash') {
+    area.innerHTML = `
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="card-face card-front">
+          <div class="card-hint">中文 → 德语（点击翻转）</div>
+          <div class="card-content">${card.translation}</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-hint">答案</div>
+          <div class="card-content">${card.word}</div>
+          <div class="card-phonetic">${card.phonetic}</div>
+          <button onclick="event.stopPropagation();playWord('${card.word.replace(/'/g,"\\'")}');return false"
+            style="margin-top:12px;background:none;border:1px solid var(--border);border-radius:6px;
+            padding:6px 14px;color:var(--white-60);font-size:12px;cursor:pointer;font-family:var(--font)">▶ 发音</button>
+        </div>
+      </div>`;
+    if (!cardFlipped) {
+      actions.innerHTML = `<div style="color:var(--white-30);font-size:13px;text-align:center;width:100%">点击卡片查看答案</div>`;
+    } else {
+      showSRSActions();
+    }
+  } else {
+    // Dictation mode
+    area.innerHTML = `
+      <div style="width:100%;max-width:360px">
+        <div style="text-align:center;margin-bottom:20px">
+          <div class="card-hint">听发音，写出德语单词</div>
+          <button class="play-btn" style="margin:16px auto;display:flex"
+            onclick="playWord('${card.word.replace(/'/g,"\\'")}')">▶</button>
+          <div style="font-size:14px;color:var(--white-60)">${card.translation}</div>
+        </div>
+        <input class="dictation-input" id="dictation-input" type="text"
+          placeholder="输入德语单词..."
+          onkeydown="if(event.key==='Enter')checkDictation('${card.word.replace(/'/g,"\\'")}',this)" />
+        <div id="dictation-feedback" style="text-align:center;margin-top:12px;font-size:14px;min-height:20px"></div>
+      </div>`;
+    actions.innerHTML = `
+      <button class="study-action" onclick="checkDictation('${card.word.replace(/'/g,"\\'")}',document.getElementById('dictation-input'))">确认</button>`;
+    setTimeout(() => document.getElementById('dictation-input')?.focus(), 100);
+  }
+}
+
+function flipCard() {
+  const fc = document.getElementById('flashcard');
+  if (!fc) return;
+  cardFlipped = !cardFlipped;
+  fc.classList.toggle('flipped', cardFlipped);
+  if (cardFlipped) showSRSActions();
+}
+
+function showSRSActions() {
+  document.getElementById('study-actions').innerHTML = `
+    <button class="study-action again" onclick="rateSRS(0)">${t('again')}</button>
+    <button class="study-action hard" onclick="rateSRS(1)">${t('hard')}</button>
+    <button class="study-action good" onclick="rateSRS(3)">${t('good')}</button>
+    <button class="study-action easy" onclick="rateSRS(5)">${t('easy')}</button>`;
+}
+
+function checkDictation(correct, input) {
+  const val = input.value.trim();
+  if (!val) return;
+  const isCorrect = val.toLowerCase() === correct.toLowerCase();
+  input.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById('dictation-feedback').textContent =
+    isCorrect ? `✓ Richtig!` : `✗ Antwort: ${correct}`;
+  setTimeout(() => {
+    rateSRS(isCorrect ? 3 : 0);
+  }, 1500);
+}
+
+function rateSRS(quality) {
+  // SM-2 algorithm
+  const vocab = getVocab();
+  const card = studyQueue[studyIndex];
+  const idx = vocab.findIndex(v => v.word === card.word);
+  if (idx >= 0) {
+    let v = vocab[idx];
+    if (quality < 3) {
+      v.interval = 1;
+    } else {
+      if (v.interval === 1) v.interval = 6;
+      else v.interval = Math.round(v.interval * v.ease);
+      v.ease = Math.max(1.3, v.ease + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    }
+    v.due = Date.now() + v.interval * 24 * 60 * 60 * 1000;
+    saveVocab(vocab);
+  }
+  studyIndex++;
+  cardFlipped = false;
+  renderStudyCard();
+}
+
+function showStudyDone() {
+  document.getElementById('study-done').style.display = 'flex';
+  document.getElementById('study-actions').style.display = 'none';
+  document.getElementById('done-title').textContent = t('doneTitle');
+  document.getElementById('done-sub').textContent =
+    `${studyQueue.length} 个单词复习完成`;
+}
+
+function endStudy() {
+  showScreen('screen-app');
+  switchTab('vocab');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ══════════════════════════════════════════════
+//  AUDIO
+// ══════════════════════════════════════════════
+function playWord(word) {
+  const w = word || document.getElementById('play-word-name').textContent;
+  if (!w || !('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = 'de-DE';
+  u.rate = 0.85;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+// ══════════════════════════════════════════════
+//  CLAUDE API
+// ══════════════════════════════════════════════
+async function callClaude(prompt, maxTokens = 1500) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || `API error ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+  return JSON.parse(text);
+}
+
+// ══════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════
+function setLoading(v) {
+  document.getElementById('loading-bar').classList.toggle('active', v);
+}
+function showEl(id) { document.getElementById(id).style.display = 'block'; }
+function hideEl(id) { document.getElementById(id).style.display = 'none'; }
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('active');
+}
+function hideError(id) { document.getElementById(id).classList.remove('active'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ══════════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
