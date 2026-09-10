@@ -1452,8 +1452,22 @@ async function callClaude(prompt, maxTokens = 1500) {
     throw new Error(e.error?.message || `API error ${res.status}`);
   }
   const data = await res.json();
-  const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
-  return JSON.parse(text);
+  let text = data.content[0].text.trim();
+  // Strip markdown code fences
+  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  // Extract JSON object if there's surrounding text
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON found in response');
+  text = jsonMatch[0];
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    // Try to fix common issues: trailing commas, unescaped quotes
+    text = text
+      .replace(/,\s*([}\]])/g, '$1')  // trailing commas
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' '); // control chars
+    return JSON.parse(text);
+  }
 }
 
 // ══════════════════════════════════════════════
